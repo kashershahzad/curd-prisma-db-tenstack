@@ -13,7 +13,6 @@ export async function POST(req) {
             });
         }
 
-        // Save to the database
         const newMessage = await prisma.message.create({
             data: { content },
         });
@@ -30,6 +29,8 @@ export async function POST(req) {
         });
     }
 }
+
+
 
 export async function GET(req) {
     try {
