@@ -25,6 +25,7 @@ export default function Home() {
         const data = await response.json();
         setMessage(`Message saved: ${data.content}`);
         getdata();
+        setContent('')
       } else {
         const error = await response.json();
         setMessage(`Error: ${error.message}`);
