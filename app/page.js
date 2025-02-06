@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react';
 
+
 export default function Home() {
   const [content, setContent] = useState('');
   const [message, setMessage] = useState(null);
@@ -23,7 +24,7 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         setMessage(`Message saved: ${data.content}`);
-        fetchMessages(); // Refresh the message list after saving a new message
+        fetchMessages();
       } else {
         const error = await response.json();
         setMessage(`Error: ${error.message}`);
@@ -44,7 +45,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchMessages(); // Fetch the messages when the component is mounted
+    fetchMessages();
   }, []);
 
   return (
