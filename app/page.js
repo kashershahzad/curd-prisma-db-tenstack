@@ -1,11 +1,11 @@
 'use client'
-import { useState, useEffect } from 'react';
-import { useMutation , useQueries } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 
 export default function Home() {
   const [content, setContent] = useState('');
   const [message, setMessage] = useState(null);
-  const [messages, setMessages] = useState([]);
 
   const handleChange = (e) => setContent(e.target.value);
 
@@ -24,7 +24,7 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         setMessage(`Message saved: ${data.content}`);
-        fetchMessages();
+        getdata();
       } else {
         const error = await response.json();
         setMessage(`Error: ${error.message}`);
@@ -34,19 +34,20 @@ export default function Home() {
     }
   };
 
-  const fetchMessages = async () => {
+  const getdata = async () => {
     try {
-      const response = await fetch('/pages/api/messages');
-      const data = await response.json();
-      setMessages(data);
+      const response = await axios('/pages/api/messages');
+      return response.data;  
     } catch (error) {
       console.error('Error fetching messages:', error);
+      return []; 
     }
   };
 
-  useEffect(() => {
-    fetchMessages();
-  }, []);
+  const { data = [] } = useQuery({
+    queryKey: ['content'],
+    queryFn: getdata,
+  });
 
   return (
     <div className="flex flex-col items-center justify-center bg-gray-100 min-h-screen p-6">
@@ -70,7 +71,7 @@ export default function Home() {
 
       <h2 className="text-3xl font-medium text-blue-600 mt-12 mb-4">All Messages</h2>
       <ul className="w-full max-w-md space-y-2">
-        {messages.map((msg) => (
+        {data.map((msg) => (
           <li key={msg.id} className="p-4 bg-white shadow-sm rounded-lg border border-gray-300">
             <p>{msg.content}</p>
           </li>
