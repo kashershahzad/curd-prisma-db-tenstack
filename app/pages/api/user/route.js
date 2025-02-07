@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 // req (request): Frontend ya API call se jo bhi request aayegi wo isme store hogi.
 // res (response): Isko hum response bhejne ke liye use karenge.
 
-export default async function handler(req, res) {
+export default async function POST(req, res) {
     // Agar request POST method se aayi hai, toh execute hoga.
     if (req.method === 'POST') {
         try {
@@ -23,7 +23,10 @@ export default async function handler(req, res) {
             });
 
             // Agar post successfully create ho gaya, toh success message ke sath post data bheja.
-            res.status(201).json({ message: 'Post created successfully!', post });
+            return new Response(JSON.stringify(post), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+            });
 
         } catch (error) {
             // Agar koi error aata hai, toh 500 status code aur error message bhejte hain

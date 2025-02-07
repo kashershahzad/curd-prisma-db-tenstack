@@ -30,12 +30,38 @@ export async function POST(req) {
     }
 }
 
-
-
-export async function GET(req) {
+export async function GET() {
     try {
-        const messages = await prisma.message.findMany();
-        return new Response(JSON.stringify(messages), {
+        const message = await prisma.message.findMany();
+        return new Response(JSON.stringify(message), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        return new Response(JSON.stringify({ message: 'Database error' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    }
+}
+
+export async function DELETE(req) {
+    try {
+        const { id } = await req.json();
+
+        if (!id) {
+            return new Response(JSON.stringify({ message: 'ID is required' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+
+        const deletedMessage = await prisma.message.delete({
+            where: { id: id },
+        });
+
+        return new Response(JSON.stringify(deletedMessage), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
         });

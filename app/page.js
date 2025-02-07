@@ -1,19 +1,19 @@
 'use client'
 import { useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 
 export default function Home() {
   const [content, setContent] = useState('');
   const [message, setMessage] = useState(null);
 
+  const queryClient = useQueryClient();
+
   const handleChange = (e) => setContent(e.target.value);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      const response = await fetch('/pages/api/messages', {
+  const mutation = useMutation({
+    mutationFn: async (content) => {
+      const response = await fetch('/pages/api/message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -23,37 +23,67 @@ export default function Home() {
 
       if (response.ok) {
         const data = await response.json();
-        setMessage(`Message saved: ${data.content}`);
-        getdata();
-        setContent('')
+        return data;
       } else {
-        const error = await response.json();
-        setMessage(`Error: ${error.message}`);
+        throw new Error('Error saving the message');
       }
-    } catch (error) {
-      setMessage('Error: Unable to save the message');
-    }
-  };
-
-  const getdata = async () => {
-    try {
-      const response = await axios('/pages/api/messages');
-      return response.data;  
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      return []; 
-    }
-  };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['content']);
+      setMessage(`Message saved: ${data.content}`);
+      setContent('');
+    },
+    onError: (error) => {
+      setMessage(`Error: ${error.message}`);
+    },
+  });
 
   const { data = [] } = useQuery({
     queryKey: ['content'],
-    queryFn: getdata,
+    queryFn: async () => {
+      const response = await axios('/pages/api/messages');
+      return response.data;
+    },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      const response = await fetch('/pages/api/messages', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      if (response.ok) {
+        return id;
+      } else {
+        throw new Error('Error deleting the message');
+      }
+    },
+    onSuccess: (deletedId) => {
+      queryClient.invalidateQueries(['content']);
+      setMessage(`Message deleted`);
+    },
+    onError: (error) => {
+      setMessage(`Error: ${error.message}`);
+    },
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    mutation.mutate(content); 
+  };
+
+  const handleDelete = (id) => {
+    deleteMutation.mutate(id);
+  };
 
   return (
     <div className="flex flex-col items-center justify-center bg-gray-100 min-h-screen p-6">
       <h1 className="text-4xl font-semibold text-blue-600 mb-6">Send a Message</h1>
-      
+
       <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg space-y-4">
         <input
           type="text"
@@ -70,11 +100,17 @@ export default function Home() {
 
       {message && <p className="mt-4 text-xl text-gray-700">{message}</p>}
 
-      <h2 className="text-3xl font-medium text-blue-600 mt-12 mb-4">All Messages</h2>
+      <h2 className="text-3xl font-medium text-blue-600 mt-12 mb-4">Messages</h2>
       <ul className="w-full max-w-md space-y-2">
         {data.map((msg) => (
           <li key={msg.id} className="p-4 bg-white shadow-sm rounded-lg border border-gray-300">
             <p>{msg.content}</p>
+            <button
+              onClick={() => handleDelete(msg.id)}
+              className="mt-2 text-red-600 hover:text-red-800"
+            >
+              Delete
+            </button>
           </li>
         ))}
       </ul>
